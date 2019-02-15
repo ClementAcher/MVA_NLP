@@ -1,0 +1,22 @@
+* Part 1
+
+- With the limit on the number of validation samples, they all get from the same
+  few labels. So that is pretty bad to evaluate the models.o
+
+Things to do :
+- [ ] Tweak the MFCCs parameters
+- [ ] Grid search on the logisitic regressing
+- [ ] Change architecture of the neural net
+- [ ] Mean-Variance normalisation
+- [ ] Augment the dataset with noise
+- [ ] More samples
+- [ ] Other models
+
+** Notebook initial
+
+3.6 - 39.4
+
+** Tweak the MFCC
+
+Using the default values found on https://python-speech-features.readthedocs.io/en/latest/
+13.1 - 47.9

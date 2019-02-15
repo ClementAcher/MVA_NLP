@@ -1,1 +1,3 @@
 TP1/speech_commands/
+TP1/extracted_features/
+*.pt

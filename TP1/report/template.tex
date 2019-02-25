@@ -163,7 +163,7 @@
  It is pretty rare in ASR to feed a classifier with the raw signals. Features
  like MFCCs and Mel Filter Banks are more suited for such tasks. They however
  both rely on the choice of a few hyperparameters. To tune this features, I have
- mostly rely on the resources from
+ mostly relied on the resources from
  \href{jhttp://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/}{this
    website}\footnote{http://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/}
  and the default parameters from another \href{https://python-speech-features.readthedocs.io/en/latest/}{feature extracting library}\footnote{https://python-speech-features.readthedocs.io/en/latest/} that I had
@@ -226,7 +226,43 @@
   simply added : many noise are way louder than the voice command. Simply
   summing these signals makes the command inaudible. To weight the ``quantity''
   of noise to add, I use the ratio of the RMS of the two signals.
+  Augmenting the dataset does not seem to have a significant impact on the models.\\
   
+  \textbf{Shuffling the samples}
+
+  As the Python implementation to load the samples goes through the folders
+  containing the commands one after the other, the training dataset is not
+  shuffled. I have added an extra step to shuffle the datasets as this could
+  potentially impact the training of the MLP (Pytorch dataloader already
+  shuffles the samples).
+  
+ \subsection{Model tuning}
+
+ CNN-based models seem quite relevant for ASR in this setting. Even though we
+ have samples with fixed length, the part with voice may be either at the
+ beginning or at the end of the sample. CNNs are great at finding patterns even
+ though they may not be at the same position every time, contrary to a simple
+ dense network. This is the main reason why I have not spend much time on trying
+ to fine tune the hyperparameters of the proposed models to rather focus on
+ implementing a CNN using Pytorch.
+
+ Another advantage of CNNs is that we don't need to flatten the MFCC features
+ before giving them to the model. We actually keep the structure.
+
+\begin{figure}[htbp]
+    \centering \includegraphics[width=0.5\textwidth]{confusion.png}
+    \caption{Confusion matrix for the CNN-based model.}\label{fig:confusion}
+  \end{figure}
+
+This final model achieves an \textbf{accuracy of 83\%} on the test set.\\
+  
+Figure \ref{fig:confusion} shows the confusion matrix on the test set of this
+model. We can for instance see that the word \texttt{three} is missclassified
+about 30\% of the time as \texttt{tree}. \texttt{go} and \texttt{no} are also
+swapped which can be easily understood, but there are some other errors that are
+harder to grasp : \texttt{off} gets missclassified as \texttt{up} 12\% of the
+time while the corresponding sounds seem quite different from each other.
+ 
 \end{homeworkProblem}
 
 \begin{homeworkProblem}
@@ -249,10 +285,10 @@
   \begin{center}
     \texttt{True sentence:  go marvin one right stop}
 
-    \texttt{Predicted sentence with greedy search: go marvin on five stop}
+    \texttt{Predicted sentence with greedy search: go marvin one eight stop}
   \end{center}
-  There are 2 substitutions out of the 5 words. The WER is then $\frac{2}{5} =
-  0.4$.\\
+  There are 1 substitutions out of the 5 words. The WER is then $\frac{1}{5} =
+  0.2$.\\
 
   \textbf{Question 2.4}
 
@@ -284,13 +320,71 @@
 
   We denote $L$ the length of a sequence ($L = 5$), $B$ the beam width and $M$
   the number of different words. The time complexity is then $\Theta({LBM(1 +
-    \log(BM)))}$ if a sorting algorithm with complexity $\Theta(n\log(n))$ is used.\\
+    \log(BM)))}$ considering that the sorting algorithm has a complexity of $\Theta(n\log(n))$.\\
   
 
   \textbf{Question 2.8}
 
+  Let's denote $V_{k, j}$ the probability of the most probable sequence $P(w_1,
+  ..., w_k, x_1,...,x_k)$ that has $j$ as its final state, $A$ the
+  transition matrix and $\boldsymbol{W}$ the set of possible words. We then have:
+
+  $$V{_{k, j} = \max_{j' \in \boldsymbol{W}}}(P(x_k | j) \cdot A_{j', j} \cdot V_{k-1, j'})$$
+
+  From this, we can simply derive the complexity of the algorithm : using the
+  previous notations $O(LM^2)$.\\
+
+  \textbf{Comparing the different decoders}
+
+ \begin{table}[H]
+   \begin{center}
+     \begin{tabular}{|l|c|c|}
+       \hline
+       & Training set  & Test set   \\ \hline
+       Greedy     & 0.181 & 0.190   \\ \hline
+       Beam search    & 0.050 & 0.046   \\ \hline
+       Viterbi    & 0.068 &  0.064  \\ \hline
+     \end{tabular}
+   \end{center}
+    \caption{WER for the different decoders}
+    \label{table:wer}
+  \end{table}
+
+  Table \ref{table:wer} contains the WER corresponding to the different
+  decoders combined with the CNN-based model introduced before. As expected,
+  beam search and Viterbi decoders perform much better than a simple greedy
+  decoder. However it is a bit surprising to see that beam search gives slightly
+  better results than the Viterbi decoder : Viterbi is an exact method while
+  beam search is not. The difference is pretty small, the difference may not be
+  significant.\\
+
+  \textbf{Question 2.10}
+
+  Using plain N-grams only based on counts can raise issues due to sparsity. If
+  we use the maximum likelihood estimator to compute a bigram model, if a
+  certain bigram was not founds in the training set, it won't ever be predicted
+  at inference time. To tackle this, smoothing techniques can be applied, such
+  as the ``Laplace'' smoothing that I have used which simply consists in adding
+  one to all bigram counts.
+
+  Another technique consists in computing a weighted average of the bigram and
+  the unigram $p _ { i n t e r p } \left( w _ { i } | w _ { i - 1 } \right) =
+  \lambda p _ { M L } \left( w _ { i } | w _ { i - 1 } \right) + ( 1 - \lambda )
+  p _ { M L } \left( w _ { i } \right)$. It requires to tune the lambda
+  parameter and it does not solve the issue of sparsity if the word does not
+  appear in the training set, which is the case for some commands here. I have
+  tested this method and it doesn't give any better results.\\
   
- 
+
+  \textbf{Question 2.11}
+
+  To optimize jointly an acoustic model and a language model, we could use a
+  different set of algorithms to perform end-to-end speech recognition. For
+  instance, RNN-based models to perform sequence-to-sequence like in \cite{46169}.
+  
 \end{homeworkProblem}
+
+\bibliography{bibli}{}
+\bibliographystyle{plain}
 
 \end{document}

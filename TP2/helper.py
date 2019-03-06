@@ -1,11 +1,18 @@
-import numpy as np
 import re
 from collections import defaultdict
 
+import numpy as np
+
 
 class PCFG:
+
+    HASHABLE_CHAR = '_'  # char used to join NT symbols in the dict
+    TRANS_CHAR = '+'  # char used to join NT symbols to create transition rules
+
     def __init__(self):
         self.rule_counter = defaultdict(lambda: defaultdict(float))
+        self.lexicon = defaultdict(lambda: defaultdict(float))
+        self.reversed_lexicon = defaultdict(lambda: defaultdict(float))
 
     @staticmethod
     def clean_sentence(sentence):
@@ -27,11 +34,29 @@ class PCFG:
         Args:
         - rule (list) : the rule is rule[0] -> rule[1]rule[2]...rule[-1]
         """
-        self.rule_counter[rule[0]]['_'.join(rule[1:])] += 1
+        # Don't add a rule that is already in the lexicon
+        if (len(rule) != 2) or (rule[1] not in self.reversed_lexicon.keys()):
+            # Remove functional labels
+            cleaned_rule = [self.clean_sentence(tag) for tag in rule]
+
+            self.rule_counter[cleaned_rule[0]][self.HASHABLE_CHAR.join(
+                cleaned_rule[1:])] += 1
+
+    def fill_lexicon(self, lines):
+        for line in lines:
+            matchs = re.findall('\(([^()]+)\)', line)
+            for match in matchs:
+                non_term, term = match.split()
+                non_term = self.clean_sentence(non_term)
+                self.lexicon[non_term][term] += 1
+                self.reversed_lexicon[term][non_term] += 1
 
     def fill_PCFG(self, lines):
+        """
+        Fill rule_counter in a linear time by line
+        """
         for line in lines:
-            line = self.clean_sentence(line)
+            # line = self.clean_sentence(line)
             # Get the sentence as a list of tags
             list_tags = line.replace('(', '( ').replace(')', ' )').split()
             stack = []
@@ -47,6 +72,13 @@ class PCFG:
                     # And replace it with the tag
                     stack.append(current_rule[0])
                     self._add_rule(current_rule)
+
+    def normalize_rules(self):
+        pass
+
+    def train(self, lines):
+        self.fill_lexicon(lines)
+        self.fill_PCFG(lines)
 
 
 def levenshtein_distance(s1, s2):
@@ -80,8 +112,16 @@ def levenshtein_distance(s1, s2):
     return d[-1, -1]
 
 
-def parse(filename='sequoia-corpus+fct.mrg_strict'):
+def tree_to_sentence(line):
+    """Get the sequence of token from a treebank sample"""
+    matchs = re.findall('\(([^()]+)\)', line)
+    for match in matchs:
+        non_term, term = match.split()
+        print(non_term, term)
+
+
+def parse(filename='./data/sequoia-corpus+fct.mrg_strict'):
     pcfg = PCFG()
     with open(filename, 'r', encoding='utf-8') as f:
-        pcfg.fill_PCFG(f.readlines())
+        pcfg.train(f.readlines())
     return pcfg

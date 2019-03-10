@@ -50,15 +50,24 @@ class TestPCFG(TestCase):
         already_clean = "( (SENT (PP (P En) (NP (NC 1996))) (PONCT ,)"
         assert PCFG.clean_sentence(already_clean) == already_clean
 
-    def test_clean_sentence_with_term_tags(self):
-        
+    def test_train(self):
+        # TODO : Write an actual test here
+        line = "(SENT (PP (P En) (NP (NC 1996))) (PONCT ,))"
+        rules = [['NC', '1996'], ['P', 'En'], ['PONCT', ','], ['NP', 'NC'],
+                 ['PP', 'P', 'NP'], ['SENT', 'PP', 'PONCT']]
 
-    # def test_fill_PCFG(self):
-    #     sent = "(SENT (PP (P En) (NP (NC 1996))) (PONCT ,))"
-    #     # rules = [['SENT', ]]
-    #     rules = [['NC', '1996'], ['P', 'En'], ['PONCT', ','], ['NP', 'NC'],
-    #              ['PP', 'P', 'NP'], ['SENT', 'PP', 'PONCT']]
-    #     self.assertCountEqual(rules, self.pcfg.fill_PCFG(sent))
+        self.pcfg.train([line])
+
+
+    def test_clean_sentence_with_term_tags(self):
+        pass
+
+    def test_fill_PCFG(self):
+        sent = "(SENT (PP (P En) (NP (NC 1996))) (PONCT ,))"
+        # rules = [['SENT', ]]
+        rules = [['NC', '1996'], ['P', 'En'], ['PONCT', ','], ['NP', 'NC'],
+                 ['PP', 'P', 'NP'], ['SENT', 'PP', 'PONCT']]
+        self.assertCountEqual(rules, self.pcfg.fill_PCFG(sent))
 
     def test_add_rule(self):
         """

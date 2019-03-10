@@ -3,7 +3,8 @@ from collections import defaultdict
 
 import numpy as np
 
-INNER_PARENTHESIS = re.compile('\(([^()]+)\)')
+# regex to extract strring in the most inner parenthesis
+INNER_PARENTHESIS = re.compile(r'\(([^()]+)\)')
 
 
 class PCFG:

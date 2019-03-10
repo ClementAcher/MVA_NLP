@@ -3,6 +3,8 @@ from collections import defaultdict
 
 import numpy as np
 
+INNER_PARENTHESIS = re.compile('\(([^()]+)\)')
+
 
 class PCFG:
 
@@ -44,7 +46,7 @@ class PCFG:
 
     def fill_lexicon(self, lines):
         for line in lines:
-            matchs = re.findall('\(([^()]+)\)', line)
+            matchs = INNER_PARENTHESIS.findall(line)
             for match in matchs:
                 non_term, term = match.split()
                 non_term = self.clean_sentence(non_term)
@@ -114,7 +116,7 @@ def levenshtein_distance(s1, s2):
 
 def tree_to_sentence(line):
     """Get the sequence of token from a treebank sample"""
-    matchs = re.findall('\(([^()]+)\)', line)
+    matchs = INNER_PARENTHESIS.findall(line)
     for match in matchs:
         non_term, term = match.split()
         print(non_term, term)

@@ -50,6 +50,9 @@ class TestPCFG(TestCase):
         already_clean = "( (SENT (PP (P En) (NP (NC 1996))) (PONCT ,)"
         assert PCFG.clean_sentence(already_clean) == already_clean
 
+    def test_clean_sentence_with_term_tags(self):
+        
+
     # def test_fill_PCFG(self):
     #     sent = "(SENT (PP (P En) (NP (NC 1996))) (PONCT ,))"
     #     # rules = [['SENT', ]]
